@@ -1,0 +1,539 @@
+Sub Venue_Booking_usage()
+
+
+
+'
+' Macro to be run on a Venue Booking report through EZ facility utilizing excel VBA
+' Purpose is to provide a basis for Ice time utilization based on time buckets
+'
+
+'
+' Disables Screen Updating
+'
+
+
+    Application.ScreenUpdating = False
+
+
+'
+'
+' Unmerge
+'
+' Keyboard Shortcut: Ctrl+z
+'
+    Columns("A:Z").UnMerge
+    
+'
+' Second Macro
+' Delete
+'
+'
+    Rows("1:7").Delete Shift:=xlUp
+    
+    
+'
+'
+'
+
+'
+' Third Macro
+' Filter blanks
+'
+' Keyboard Shortcut: Ctrl+m
+'
+    Columns("A:K").AutoFilter
+    ActiveSheet.Range("$A$1:$K$4000").AutoFilter Field:=1, Criteria1:="="
+    Range("A2:K1048576").Select
+    Selection.EntireRow.Delete
+    ActiveSheet.Range("$A$1:$K$3000").AutoFilter Field:=1
+    Selection.AutoFilter
+        
+    Calculate
+'
+' Fourth Macro
+' Insert rows and clean data
+'
+' Keyboard Shortcut: Ctrl+Shift+U
+'
+    Cells.Select
+    Selection.ClearFormats
+    Columns("B:B").Select
+    Selection.Insert Shift:=xlToRight
+    Range("B2").Select
+    ActiveCell.FormulaR1C1 = "=ROUNDDOWN(RC[1],)"
+    Range("B2").Select
+    Selection.AutoFill Destination:=Range("B2:B3000")
+
+    Calculate
+    
+'
+'
+' Fifth Macro
+' Insert Column
+'
+'
+    
+    Application.CutCopyMode = False
+    Columns("B:B").Select
+    Selection.Insert Shift:=x1ToRight
+    Range("B2").Select
+'
+' Subtract Macro
+' Subtract one column from the other and then auto fill
+'
+' Keyboard Shortcut: Ctrl+Shift+T
+'
+    Application.CutCopyMode = False
+    Range("B2").Select
+    ActiveCell.FormulaR1C1 = "=RC[3]-RC[2]"
+    Range("B2").Select
+    Selection.AutoFill Destination:=Range("B2:B3000")
+    Range("B2:B3000").Select
+    
+    Calculate
+    
+'
+'
+' Isolate Times
+'
+'
+
+    Application.CutCopyMode = False
+    Columns("B:B").Select
+    Selection.Insert Shift:=x1ToRight
+    Range("B2").Select
+    ActiveCell.FormulaR1C1 = "=RC[3]-RC[2]"
+    Selection.AutoFill Destination:=Range("B2:B3000")
+    Range("B1").Activate
+    ActiveCell = "Time"
+    Range("C1").Activate
+    ActiveCell = "Duration"
+    Range("D1") = "Date"
+'
+'
+'
+' Create VLookupTable
+'
+'
+'
+' SetupTable Macro
+'
+
+'
+   
+    Sheets.Add After:=ActiveSheet
+    Columns("A:B").Select
+    Selection.NumberFormat = "0.00"
+    Range("A1").FormulaR1C1 = "WkendTime"
+    Range("A2") = "0"
+    Range("A3") = "7/24"
+    Range("A4") = "10/24"
+    Range("A5") = "22/24"
+    Range("A6") = "1"
+    Range("A8") = "Wkdaytime"
+    Range("A9") = "0"
+    Range("A10") = "9/24"
+    Range("A11") = "15/24"
+    Range("A12") = "22/24"
+    Range("A13") = "1"
+    
+    Range("B1").FormulaR1C1 = "Buckets"
+    Range("B2").FormulaR1C1 = "0"
+    Range("B3").FormulaR1C1 = "1"
+    Range("B4").FormulaR1C1 = "2"
+    Range("B5").FormulaR1C1 = "3"
+    Range("B6").FormulaR1C1 = "0"
+    
+Range("C1").Select
+    
+    Range("B9").FormulaR1C1 = "0"
+    Range("B10").FormulaR1C1 = "1"
+    Range("B11").FormulaR1C1 = "2"
+    Range("B12").FormulaR1C1 = "3"
+    Range("B13").FormulaR1C1 = "0"
+    
+    
+    
+'
+' Create bucket total times
+'
+    Range("C1").FormulaR1C1 = "BucketDuration"
+    Application.CutCopyMode = False
+    Range("C2").Activate
+    ActiveCell.FormulaR1C1 = "=R[1]C[-2]-RC[-2]"
+    Range("C2").Select
+    Selection.AutoFill Destination:=Range("C2:C13"), Type:=xlFillDefault
+    Range("C2:C13").Select
+    Calculate
+    
+    
+'
+'   Activate Worksheet(1)
+'
+
+    
+    Worksheets(1).Activate
+    
+    
+'
+'
+' Convert to Values
+'
+'
+    Calculate
+    
+    Dim rng As Range
+
+    For Each rng In ActiveSheet.UsedRange
+
+        If rng.HasFormula Then
+
+            rng.Formula = rng.Value
+
+        End If
+
+    Next rng
+    
+'
+'
+' Insert formula to label the activities
+'
+'
+
+    Calculate
+    Columns("G:G").Select
+    Selection.Insert Shift:=x1ToRight
+    Range("G1") = "Weekday=1"
+    Range("G2").Select
+    ActiveCell.FormulaR1C1 = "=IF(WEEKDAY(RC[-3],2)>5,2,1)"
+    Selection.AutoFill Destination:=Range("G2:G3000")
+    Range("G2:G3000").Select
+    Calculate
+    Columns("H:H").Select
+    Selection.Insert Shift:=x1ToRight
+    Range("H1") = "Bucket"
+'
+'
+' Paste
+'
+'
+
+    Range("B:B,G:G").Select
+    Range("G1").Activate
+    Selection.Copy
+    Worksheets(2).Activate
+    Columns("G:G").Select
+    ActiveSheet.Paste
+    Calculate
+ 
+'
+'Create Buckets
+'
+    Range("I2").Select
+    ActiveCell.FormulaR1C1 = _
+    "=IF(RC[-1]=2,VLOOKUP(RC[-2],R2C1:R6C2,2,TRUE),VLOOKUP(RC[-2],R9C1:R13C2,2,TRUE))"
+    Range("I2").Select
+    Selection.AutoFill Destination:=Range("I2:I3000")
+    Calculate
+ 
+'
+' Create bucket durations
+'
+    Range("J2").Select
+    ActiveCell.FormulaR1C1 = _
+    "=IF(RC[-2]=2,VLOOKUP(RC[-3],R2C1:R6C3,3,TRUE),VLOOKUP(RC[-3],R9C1:R13C3,3,TRUE))"
+    Range("J2").Select
+    Selection.AutoFill Destination:=Range("J2:J3000")
+    Worksheets(1).Activate
+    Range("C:C").Select
+    Selection.Copy
+    Worksheets(2).Activate
+    Columns("K:K").Select
+    Selection.Insert Shift:=x1ToRight
+    Calculate
+    
+'
+' Creating bucket percentage factors
+'
+
+
+    Application.CutCopyMode = False
+    ActiveCell.FormulaR1C1 = "=RC[-1]/RC[-2]"
+    Range("L2").Select
+    Selection.AutoFill Destination:=Range("L2:L3000")
+    Columns("K:K").Select
+    Selection.Style = "Percent"
+    Calculate
+ 
+ 
+ 
+ 
+ '
+ ' Paste values to new sheet
+ '
+ 
+ 
+ 
+
+    Range("I2:K10000").Select
+    Selection.Copy
+    Worksheets(1).Select
+    Range("H2").Select
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Application.CutCopyMode = False
+    Calculate
+
+'
+' Paste Percentage Factors
+'
+
+
+    Worksheets(2).Select
+    Range("K2:K100000").Select
+    Selection.Copy
+    Worksheets(1).Select
+    Range("P1") = ("Factors")
+    Range("P2").Select
+'
+'
+'
+
+    Application.CutCopyMode = False
+    Calculate
+'
+' Segment the two
+'
+    Columns("A:P").Select
+    Selection.AutoFilter
+    ActiveSheet.Range("$A$1:$P$8000").AutoFilter Field:=11, Criteria1:= _
+        "Studio Ice"
+    Columns("A:P").Select
+    Selection.Copy
+    Sheets.Add After:=ActiveSheet
+    Range("A1").Select
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Worksheets(1).Activate
+    ActiveSheet.Range("$A$1:$P$10000").AutoFilter Field:=11, Criteria1:=Array( _
+        "Locker Room 1", "Studio Ice", "="), Operator:=xlFilterValues
+    Range("A2:P10000").Select
+    Application.CutCopyMode = False
+    Selection.EntireRow.Delete
+    Selection.AutoFilter
+'
+'
+'
+
+    Worksheets(1).Activate
+    Columns("A:A").Select
+    Selection.Insert Shift:=x1ToRight
+    Range("A1") = ("Day of Week")
+    Range("A2").FormulaR1C1 = "=WEEKDAY(RC[4],2)"
+    Range("A2").Select
+    Selection.AutoFill Destination:=Range("A2:A10000")
+'
+'
+'
+
+    Worksheets(2).Activate
+    Columns("A:A").Select
+    Selection.Insert Shift:=x1ToRight
+    Range("A1") = ("Day of Week")
+    Range("A2").FormulaR1C1 = "=WEEKDAY(RC[4],2)"
+    Range("A2").Select
+    Selection.AutoFill Destination:=Range("A2:A10000")
+
+'
+'
+' Rename
+'
+'
+
+    
+    Worksheets(1).Name = "Main"
+    Worksheets(2).Name = "Studio"
+
+'
+' Insert Table to both Sheets
+'
+
+    Sheets("Main").Select
+    Columns("A:Q").Select
+    ActiveSheet.ListObjects.Add(xlSrcRange, Range("$A:$Q"), , xlYes).Name = _
+        "MainTable1"
+    Columns("A:Q").Select
+    Sheets("Studio").Select
+    Columns("A:Q").Select
+    Application.CutCopyMode = False
+    ActiveSheet.ListObjects.Add(xlSrcRange, Range("$A:$Q"), , xlYes).Name = _
+        "StudioTable2"
+    Columns("A:Q").Select
+    Sheets("Main").Select
+    
+    Calculate
+
+'
+'
+'
+' Pivot Table
+'
+'
+
+    Sheets.Add
+    Sheets.Add
+ 
+    Worksheets(1).Name = "PVTMain"
+    Worksheets(2).Name = "PVTStudio"
+    Sheets("Main").Select
+'
+'
+'
+'
+' Macro that makes pivot tables of each Main table and Studio table
+
+
+'
+' Main Ice Optimization report
+' Inserts Pvt table into the proper sheet of Main
+'
+
+'
+    Sheets("Main").Select
+    Application.CutCopyMode = False
+    ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
+        "MainTable1", Version:=6).CreatePivotTable TableDestination:="PVTMain!R3C2" _
+        , TableName:="PivotTable1", DefaultVersion:=6
+    Sheets("PVTMain").Select
+    Cells(3, 2).Select
+    With ActiveSheet.PivotTables("PivotTable1")
+        .ColumnGrand = True
+        .HasAutoFormat = True
+        .DisplayErrorString = False
+        .DisplayNullString = True
+        .EnableDrilldown = True
+        .ErrorString = ""
+        .MergeLabels = False
+        .NullString = ""
+        .PageFieldOrder = 2
+        .PageFieldWrapCount = 0
+        .PreserveFormatting = True
+        .RowGrand = True
+        .SaveData = True
+        .PrintTitles = False
+        .RepeatItemsOnEachPrintedPage = True
+        .TotalsAnnotation = False
+        .CompactRowIndent = 1
+        .InGridDropZones = False
+        .DisplayFieldCaptions = True
+        .DisplayMemberPropertyTooltips = False
+        .DisplayContextTooltips = True
+        .ShowDrillIndicators = True
+        .PrintDrillIndicators = False
+        .AllowMultipleFilters = False
+        .SortUsingCustomLists = True
+        .FieldListSortAscending = False
+        .ShowValuesRow = False
+        .CalculatedMembersInFilters = False
+        .RowAxisLayout xlCompactRow
+    End With
+    With ActiveSheet.PivotTables("PivotTable1").PivotCache
+        .RefreshOnFileOpen = False
+        .MissingItemsLimit = xlMissingItemsDefault
+    End With
+    ActiveSheet.PivotTables("PivotTable1").RepeatAllLabels xlRepeatLabels
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Date")
+        .Orientation = xlRowField
+        .Position = 1
+    End With
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Bucket")
+        .Orientation = xlColumnField
+        .Position = 1
+    End With
+    ActiveSheet.PivotTables("PivotTable1").AddDataField ActiveSheet.PivotTables( _
+        "PivotTable1").PivotFields("Column1"), "Sum of Column1", xlSum
+    With ActiveSheet.PivotTables("PivotTable1").PivotFields("Bucket")
+        .PivotItems("(blank)").Visible = False
+    End With
+    Columns("C:G").Select
+    Selection.Style = "Percent"
+    Range("C4:F4").Select
+    Selection.NumberFormat = "0.00"
+    Columns("B:B").Select
+    Selection.NumberFormat = "m/d/yyyy"
+    
+    
+'
+' Studio Ice Optimization report
+' Inserts Pvt table into the proper sheet of Studio
+'
+
+    
+    Sheets("Studio").Select
+    Range("A2").Select
+    ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:= _
+        "StudioTable2", Version:=6).CreatePivotTable TableDestination:= _
+        "PVTStudio!R3C2", TableName:="PivotTable2", DefaultVersion:=6
+    Sheets("PVTStudio").Select
+    Cells(3, 2).Select
+    With ActiveSheet.PivotTables("PivotTable2")
+        .ColumnGrand = True
+        .HasAutoFormat = True
+        .DisplayErrorString = False
+        .DisplayNullString = True
+        .EnableDrilldown = True
+        .ErrorString = ""
+        .MergeLabels = False
+        .NullString = ""
+        .PageFieldOrder = 2
+        .PageFieldWrapCount = 0
+        .PreserveFormatting = True
+        .RowGrand = True
+        .SaveData = True
+        .PrintTitles = False
+        .RepeatItemsOnEachPrintedPage = True
+        .TotalsAnnotation = False
+        .CompactRowIndent = 1
+        .InGridDropZones = False
+        .DisplayFieldCaptions = True
+        .DisplayMemberPropertyTooltips = False
+        .DisplayContextTooltips = True
+        .ShowDrillIndicators = True
+        .PrintDrillIndicators = False
+        .AllowMultipleFilters = False
+        .SortUsingCustomLists = True
+        .FieldListSortAscending = False
+        .ShowValuesRow = False
+        .CalculatedMembersInFilters = False
+        .RowAxisLayout xlCompactRow
+    End With
+    With ActiveSheet.PivotTables("PivotTable2").PivotCache
+        .RefreshOnFileOpen = False
+        .MissingItemsLimit = xlMissingItemsDefault
+    End With
+    ActiveSheet.PivotTables("PivotTable2").RepeatAllLabels xlRepeatLabels
+    With ActiveSheet.PivotTables("PivotTable2").PivotFields("Date")
+        .Orientation = xlRowField
+        .Position = 1
+    End With
+    With ActiveSheet.PivotTables("PivotTable2").PivotFields("Bucket")
+        .Orientation = xlColumnField
+        .Position = 1
+    End With
+    ActiveSheet.PivotTables("PivotTable2").AddDataField ActiveSheet.PivotTables( _
+        "PivotTable2").PivotFields("Column1"), "Sum of Column1", xlSum
+    With ActiveSheet.PivotTables("PivotTable2").PivotFields("Bucket")
+        .PivotItems("(blank)").Visible = False
+    End With
+    Columns("C:G").Select
+    Selection.Style = "Percent"
+    Columns("C:G").EntireColumn.AutoFit
+    Columns("B:B").Select
+    Selection.NumberFormat = "m/d/yyyy"
+    Range("C4:F4").Select
+    Selection.NumberFormat = "0.00"
+   
+End Sub
+
+
+
